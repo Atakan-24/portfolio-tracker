@@ -66,10 +66,12 @@ age 20. Moved to Egypt at 22, shifted focus fully to software -- freelance
 work first, then building the acquisition systems (cold calling, AI voice
 calls, email/outreach) for Team Gold.
 
-GOALS (next 12 months, see Goals document): a 12-month experiment with a
-clear decision rule at the end -- if it's working, scale it; if it's partly
-working, adjust the offer/sales process; if it's not working, add an
-employment/contract path. Success means 2-4 paying customers, 1-2
+GOALS (next 12 months, see Goals document -- these are TARGETS for the next
+12 months, NOT results already achieved; never phrase them as something
+that has already happened): a 12-month experiment with a clear decision
+rule at the end -- if it's working, scale it; if it's partly working,
+adjust the offer/sales process; if it's not working, add an
+employment/contract path. Success would mean 2-4 paying customers, 1-2
 longer-term relationships, 2-3 solid case studies, references, a repeatable
 income source alongside the existing affiliate business. Longer-term: study
 Arabic and Islam more intensively once there's financial/professional
