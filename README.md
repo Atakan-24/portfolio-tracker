@@ -1,29 +1,57 @@
-# portfolio-tracker (retired)
+# portfolio-tracker
 
-The personal portfolio now consists of static pages without visitor tracking or an AI chatbot. The `ask` and `track` source endpoints return HTTP 410 without reading request bodies, environment secrets, visitor IPs or sending provider/database requests.
+Privacy-conscious visitor analytics and a grounded "ask me anything" chat
+for [my portfolio site](https://atakan-24.github.io/). Two small Supabase
+Edge Functions with rate limiting; raw IP addresses are not written to the application database.
 
-The replacements were deployed to the verified `portfolio-tracker` project on October 8, 2026 (local time). JWT settings are unchanged. No records or credentials were deleted.
+## What it does
 
-## Why retire it
+**`functions/track`** — logs pageviews and outbound link clicks
+from the portfolio site. Resolves the visitor's country via a transient IP
+geolocation lookup (ip-api.com), and does not write the raw IP to the database. Event records include country,
+region and page/referrer metadata. The geolocation provider receives the IP.
 
-The earlier chat endpoint checked daily quotas with separate count and insert operations, which could race or fail open on database errors. The tracking endpoint sent visitor IPs to an HTTP geolocation service. Removing unused data collection and LLM processing avoids retaining those paths solely for a portfolio.
+**`functions/ask`** — a small AI chat backend for the "Ask me directly"
+section of the portfolio. Its prompt supplies a fixed knowledge block (my
+real CV, goals document and project write-ups) and is instructed to say "I
+don't know" rather than invent an answer. Runs on Groq's free tier
+(`openai/gpt-oss-20b`); operating cost depends on provider quotas and usage. Rate-limited per
+visitor (hashed IP) and globally per day to reduce quota exhaustion.
 
-## Offline verification
+**`bericht.mjs`** — a small CLI script that prints a summary of recent
+visits: country breakdown, top referrers, most-clicked links.
 
-Node.js 24+:
+## Why it's built this way
 
-```sh
-node --test tests/*.test.mjs
+- **No raw IP in application records.** `ask` stores a SHA-256 hash of the
+  IP for rate limiting. A hash is a pseudonymous identifier, not a guarantee
+  of anonymity. Page/referrer metadata and free-text questions can also
+  contain information supplied by visitors.
+- **The AI is grounded, not open-ended.** Its knowledge is a fixed text
+  block rather than a live search. The prompt asks it to admit uncertainty;
+  that instruction reduces unsupported answers but cannot guarantee accuracy.
+- **Quota-conscious operation.** Per-visitor and daily limits help manage
+  provider usage. They do not guarantee zero cost under every configuration
+  or future pricing policy.
+
+## Stack
+
+- Supabase (Postgres + Edge Functions, Deno runtime)
+- Groq API (free tier, `openai/gpt-oss-20b`)
+
+## Running the report locally
+
+```bash
+cp .env.example .env.local   # fill in your own Supabase project URL + anon key
+node bericht.mjs             # last 7 days
+node bericht.mjs --tage=30   # last 30 days
 ```
 
-Tests exercise both handlers with malformed and large bodies and assert that they return 410 without reading data, looking up secrets or fetching any URL. They do not contact Supabase or change production state.
+The Edge Functions themselves are deployed straight to Supabase (Dashboard
+or `supabase functions deploy`) — `functions/*/index.ts` here is the
+version-controlled source, not something you run directly with Node.
 
-## Historical data access
+## License
 
-Live inspection found RLS enabled with `anon` SELECT policies using `true` on both log tables. The [migration](supabase/migrations/20261007211944_protect_portfolio_logs.sql) removes those policies and revokes table privileges from PUBLIC, anon and authenticated. Existing owner/service-role access and all records are retained. Post-migration metadata checks confirm client SELECT/TRUNCATE access is denied and owner SELECT remains available.
-
-`bericht.mjs` can read historical visits locally with explicit owner credentials in `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Never use that key in browser code or publish an environment file. The CLI restricts its destination to a hosted HTTPS Supabase origin, bounds the time window and warns if its 1,000-record limit may truncate totals. No visitor records were read during this audit.
-
-The Supabase Advisor now reports RLS with no client policies as an informational notice. This is intentional for owner-only retained logs; see [the notice documentation](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy).
-
-Earlier implementation is retained in Git history. License remains all rights reserved; see [LICENSE](LICENSE).
+All rights reserved — see [LICENSE](LICENSE). Published for demonstration
+and portfolio purposes; feel free to read the code, not to reuse it.
