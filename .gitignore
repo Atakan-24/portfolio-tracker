@@ -1,3 +1,2 @@
-# Owner credentials and local CLI cache never belong in the public showcase.
-.env*
-supabase/.temp/
+.env.local
+node_modules/
